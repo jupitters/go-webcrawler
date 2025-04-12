@@ -3,5 +3,21 @@ package main
 import "fmt"
 
 func main() {
-	fmt.Println(normalizeURL("http://google.com/query/"))
+	body := `
+	<html>
+	<body>
+		<a href="/path/one">
+			<span>Boot.dev</span>
+		</a>
+		<a href="https://other.com/path/one">
+			<span>Boot.dev</span>
+		</a>
+	</body>
+	</html>
+	`
+	a, e := getURLsFromHTML(body, "https://blog.boot.dev")
+	if e != nil {
+		fmt.Println("e")
+	}
+	fmt.Println(a)
 }
