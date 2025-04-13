@@ -42,6 +42,11 @@ func getURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
 					if strings.Index(a.Val, "#") == 0 {
 						a.Val = rawBaseURL + "/" + a.Val
 					}
+					if a.Val == ""{
+						URLs = append(URLs, rawBaseURL)
+						continue
+					}
+		
 					URLs = append(URLs, a.Val)
 					//fmt.Println(a.Val)
 					break

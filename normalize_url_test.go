@@ -47,7 +47,7 @@ func TestGetURLsFromHTML(t *testing.T) {
 	tests := []struct {
 		name          string
 		inputURL	  string
-		inputBody      string
+		inputBody     string
 		expected      []string
 	}{
 		{
@@ -93,6 +93,29 @@ func TestGetURLsFromHTML(t *testing.T) {
 				</body>
 			</html>`,
 			expected: []string{"https://example.com/search?q=golang", "https://example.com/#section", "https://external.com/docs#chapter"},
+		},
+		{
+			name: "no links",
+			inputURL:  "https://example.com",
+			inputBody: `
+			<html>
+				<body>
+					<p>No links here</p>
+				</body>
+			</html>`,
+			expected: []string{},
+		},
+		{
+			name: "empty href attributes",
+			inputURL:  "https://example.com",
+			inputBody: `
+			<html>
+				<body>
+					<a href="">Empty</a>
+					<a>No href</a>
+				</body>
+			</html>`,
+			expected: []string{"https://example.com"}, // Empty href typically resolves to base URL
 		},
 	}
 	for i, tc := range tests {
