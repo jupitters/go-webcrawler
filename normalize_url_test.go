@@ -67,6 +67,33 @@ func TestGetURLsFromHTML(t *testing.T) {
 			`,
 			expected: []string{"https://blog.boot.dev/path/one", "https://other.com/path/one"},
 		},
+		{
+			name: "multiple relative URLs",
+			inputURL:  "https://example.com",
+			inputBody: `
+			<html>
+				<body>
+					<a href="/about">About</a>
+					<a href="/contact">Contact</a>
+					<a href="/blog">Blog</a>
+				</body>
+			</html>
+			`,
+			expected: []string{"https://example.com/about", "https://example.com/contact", "https://example.com/blog"},
+		},
+		{
+			name: "mixed URLs with fragments and queries",
+			inputURL:  "https://example.com",
+			inputBody: `
+			<html>
+				<body>
+					<a href="/search?q=golang">Search</a>
+					<a href="#section">Section</a>
+					<a href="https://external.com/docs#chapter">Docs</a>
+				</body>
+			</html>`,
+			expected: []string{"https://example.com/search?q=golang", "https://example.com/#section", "https://external.com/docs#chapter"},
+		},
 	}
 	for i, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
