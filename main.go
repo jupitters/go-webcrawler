@@ -9,7 +9,7 @@ func main() {
 		<a href="/path/one">
 			<span>Boot.dev</span>
 		</a>
-		<a href="https://other.com/path/one">
+		<a href="path/broken
 			<span>Boot.dev</span>
 		</a>
 	</body>
