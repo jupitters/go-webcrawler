@@ -1,23 +1,22 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
-	body := `
-	<html>
-	<body>
-		<a href="/path/one">
-			<span>Boot.dev</span>
-		</a>
-		<a href="path/broken
-			<span>Boot.dev</span>
-		</a>
-	</body>
-	</html>
-	`
-	a, e := getURLsFromHTML(body, "https://blog.boot.dev")
-	if e != nil {
-		fmt.Println("e")
+	args := os.Args
+	if len(args) < 2 {
+		fmt.Println("Website não especificado.")
+		fmt.Println("Uso: ./crawler <website>")
+		os.Exit(1)
 	}
-	fmt.Println(a)
+	if len(args) > 2 {
+		fmt.Println("Argumentos em excesso.")
+		fmt.Println("Uso: ./crawler <website>")
+		os.Exit(1)
+	}
+	
+	fmt.Printf("Iniciando crawler em: %s\n", args[1])
 }
