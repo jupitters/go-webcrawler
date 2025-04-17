@@ -5,18 +5,33 @@ import (
 	"net/url"
 )
 
-func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
+func (cfg *config) addPageVisit(normalizedURL string) (isFirst bool) {
+	cfg.mu.Lock()
+	defer cfg.mu.Unlock()
+
+	if _, exists := cfg.pages[normalizedURL]; exists {
+		cfg.pages[normalizedURL]++
+		return false
+	}
+
+	cfg.pages[normalizedURL] = 1
+	return true
+}
+
+func (cfg *config) crawlPage(rawCurrentURL string) {	
+	cfg.concurrencyControl <- struct{}{}
+	defer func() { 
+		<-cfg.concurrencyControl 
+		cfg.wg.Done()
+		}()
+
 	currentURL, err := url.Parse(rawCurrentURL)
 	if err != nil {
 		fmt.Printf("Error - crawlPage: couldn't parse rawCurrentURL '%s': %v\n", rawCurrentURL, err)
 		return
 	}
-	baseURL, err := url.Parse(rawBaseURL)
-	if err != nil {
-		fmt.Printf("Error - crawlPage: couldn't parse rawBaseURL '%s': %v\n", rawBaseURL, err)
-		return
-	}
-	if baseURL.Hostname() != currentURL.Hostname() {
+
+	if cfg.baseURL.Hostname() != currentURL.Hostname() {
 		return
 	}
 
@@ -26,12 +41,9 @@ func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
 		return
 	}
 
-	if _, visited := pages[normalizedURL]; visited {
-		pages[normalizedURL]++
+	if isFirst := cfg.addPageVisit(normalizedURL); !isFirst {
 		return
 	}
-
-	pages[normalizedURL] = 1
 
 	fmt.Printf("Fazendo crawling em %s\n", rawCurrentURL)
 
@@ -41,13 +53,14 @@ func crawlPage(rawBaseURL, rawCurrentURL string, pages map[string]int) {
 		return
 	}
 
-	proxURLs, err := getURLsFromHTML(htmlBody, rawBaseURL)
+	proxURLs, err := getURLsFromHTML(htmlBody, cfg.baseURL.String())
 	if err != nil {
 		fmt.Printf("Error - getURLFromHTML: %v", err)
 		return
 	}
 
 	for _, proxURL := range proxURLs {
-		crawlPage(rawBaseURL, proxURL, pages)
+		cfg.wg.Add(1)
+		go cfg.crawlPage(proxURL)
 	}
 }

@@ -5,9 +5,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"sync"
 )
+type config struct {
+	pages              map[string]int
+	baseURL            *url.URL
+	mu                 *sync.Mutex
+	concurrencyControl chan struct{}
+	wg                 *sync.WaitGroup
+}
 
 func getHTML(rawURL string) (string, error) {
 	resp, err := http.Get(rawURL)
@@ -34,27 +43,39 @@ func getHTML(rawURL string) (string, error) {
 }
 
 func main() {
-	args := os.Args
-	if len(args) < 2 {
+	if len(os.Args) < 2 {
 		fmt.Println("Website não especificado.")
 		fmt.Println("Uso: ./crawler <website>")
 		return
 	}
-	if len(args) > 2 {
+	if len(os.Args) > 2 {
 		fmt.Println("Argumentos em excesso.")
 		fmt.Println("Uso: ./crawler <website>")
 		return
 	}
 
-	rawBaseURL := os.Args[1]
-	
-	fmt.Printf("Iniciando crawler em: %s\n", rawBaseURL)
-	
-	pages := make(map[string]int)
+	baseURL, err := url.Parse(os.Args[1])
+	if err != nil {
+		fmt.Printf("Erro no parametro URL: %v", err)
+		return
+	}
 
-	crawlPage(rawBaseURL, rawBaseURL, pages)
+	cfg := &config{
+		pages: make(map[string]int),
+		baseURL: baseURL,
+		mu: &sync.Mutex{},
+		concurrencyControl: make(chan struct{}, 3),
+		wg: &sync.WaitGroup{},
+	}
 
-	for normalizedURL, count := range pages {
-		fmt.Printf("%d - %s\n", count, normalizedURL)
+	fmt.Printf("Iniciando crawler em: %s\n", baseURL.String())
+	
+	cfg.wg.Add(1)
+	go cfg.crawlPage(baseURL.String())
+	cfg.wg.Wait()
+
+	fmt.Println("\nResultados:")
+	for normalizedUrl, count := range cfg.pages {
+		fmt.Printf("%d - %s\n", count, normalizedUrl)
 	}
 }
