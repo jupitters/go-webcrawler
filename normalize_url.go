@@ -23,7 +23,7 @@ func normalizeURL(rawURL string) (string, error) {
 func getURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
 	URLs := []string{}
 
-	parsedHttp, err := html.Parse(strings.NewReader(htmlBody))
+	parsedHtml, err := html.Parse(strings.NewReader(htmlBody))
 	if err != nil {
 		return []string{}, errors.New("não foi possivel ler o HTML")
 	}
@@ -32,12 +32,12 @@ func getURLsFromHTML(htmlBody, rawBaseURL string) ([]string, error) {
 	// 	return []string{}, errors.New("não foi possivel obter a URL absoluta")
 	// }
 
-	for n := range parsedHttp.Descendants() {
+	for n := range parsedHtml.Descendants() {
 		if n.Type == html.ElementNode && n.DataAtom == atom.A {
 			for _, a := range n.Attr {
 				if a.Key == "href" {
 					if strings.Index(a.Val, "/") == 0{
-						a.Val = rawBaseURL + a.Val
+						a.Val = rawBaseURL + a.Val[1:]
 					}
 					if strings.Index(a.Val, "#") == 0 {
 						a.Val = rawBaseURL + "/" + a.Val
